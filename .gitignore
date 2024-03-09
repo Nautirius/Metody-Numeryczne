@@ -1,0 +1,60 @@
+# Compiled Object files
+*.slo
+*.lo
+*.o
+*.obj
+
+# Compiled Dynamic libraries
+*.so
+*.dylib
+*.dll
+
+# Executables
+*.exe
+*.out
+*.app
+
+# Compiled Static libraries
+*.a
+*.lib
+
+# CMake
+CMakeFiles/
+CMakeCache.txt
+CMakeScripts/
+
+# Visual Studio Code
+.vscode/
+
+# Xcode
+*.xcworkspace/
+*.xcodeproj/
+
+# Eclipse
+.project
+.settings/
+
+# Sublime Text
+*.sublime-project
+*.sublime-workspace
+
+# Code::Blocks
+*.depend
+*.layout
+
+# Qt
+*.pro.user
+*.qbs
+
+# OS-generated files
+.DS_Store
+Thumbs.db
+
+# User-specific files
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+
+# output text files
+*.txt
