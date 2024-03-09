@@ -1,1 +1,1 @@
-# PO1
+# Metody Numeryczne
