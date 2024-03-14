@@ -15,6 +15,7 @@ void print_matrix(const gsl_matrix *M)
         printf("\n");
     }
 }
+
 void print_vector(const gsl_vector *V)
 {
     printf("\nWektor:\n");
@@ -24,6 +25,7 @@ void print_vector(const gsl_vector *V)
     }
     printf("\n");
 }
+
 void fill_matrix(gsl_matrix *M, double *values)
 {
     for (size_t row = 0; row < M->size1; ++row)
@@ -34,6 +36,7 @@ void fill_matrix(gsl_matrix *M, double *values)
         }
     }
 }
+
 void fill_vector(gsl_vector *V, double *values)
 {
     for (size_t col = 0; col < V->size; ++col)
@@ -41,10 +44,11 @@ void fill_vector(gsl_vector *V, double *values)
         gsl_vector_set(V, col, values[col]);
     }
 }
+
 void gauss_elim_solve(gsl_matrix *A, gsl_vector *V)
 {
     //
-    // rozwiazywanie układu
+    // rozwiązywanie układu
     //
     // zerowanie poddiagonali
     // iterowanie po kolumnach
@@ -103,6 +107,7 @@ void gauss_elim_solve(gsl_matrix *A, gsl_vector *V)
     print_matrix(A);
     print_vector(V);
 }
+
 void matrix_vector_multiplication(gsl_matrix *M, gsl_vector *V, gsl_vector *C)
 {
     for (size_t row = 0; row < M->size1; ++row)
@@ -115,6 +120,7 @@ void matrix_vector_multiplication(gsl_matrix *M, gsl_vector *V, gsl_vector *C)
         gsl_vector_set(C, row, sum);
     }
 }
+
 double calculate_deviation(gsl_vector *V1, gsl_vector *V2)
 {
     double sum = 0.0;
@@ -168,9 +174,9 @@ int main()
 
         // obliczanie odchylenia między wektorami b i c
         double o = calculate_deviation(b_cp, c);
-        printf("\nOdchylenie między wektorami b i c: %f\n", o);
+        printf("\nOdchylenie między wektorami b i c: %g\n", o);
 
-        fprintf(fp, "%.2f,%f\n", q, o);
+        fprintf(fp, "%.2f,%g\n", q, o);
     }
 
     fclose(fp);
