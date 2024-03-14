@@ -56,9 +56,9 @@ int main()
 
     //
     // szukamy rozkladu LU
-    gsl_permutation *p = gsl_permutation_calloc(m);
-
     // int gsl_linalg_LU_decomp(gsl_matrix *a, gsl permutation *p, int *signum);
+
+    gsl_permutation *p = gsl_permutation_calloc(m);
     int sig = 1;
     gsl_linalg_LU_decomp(A, p, &sig);
 
@@ -81,7 +81,6 @@ int main()
 
     //
     // wyznaczanie macierzy odwrotnej
-
     // int gsl_linalg_LU_solve(gsl_matrix *A, gsl_permutation *p, gsl_vector *b, gsl_vector *x);
 
     gsl_vector *b1 = gsl_vector_calloc(m);
@@ -118,7 +117,6 @@ int main()
 
     //
     // liczenie iloczynu macierzy
-
     gsl_matrix *PRODUCT = gsl_matrix_calloc(n, m);
 
     for (int i = 0; i < n; i++)
@@ -135,12 +133,9 @@ int main()
     }
     fprintf(fp, "\nWynik iloczynu:\n");
     print_matrix(fp, PRODUCT);
-    // printf("\n");
-    // print_matrix(fp, A_COPY);
 
     //
     // wyznaczanie wskaźnika uwarunkowania macierzy
-
     double norm1 = 0.0, norm2 = 0.0;
     double h1, h2;
 
@@ -158,6 +153,7 @@ int main()
     }
     double cond = norm1 * norm2;
     fprintf(fp, "\nWskaźnik uwarunkowania:\n%f", cond);
+    fclose(fp);
 
     //
     // zwalnianie pamięci
@@ -166,7 +162,6 @@ int main()
     gsl_vector_free(b1);
     gsl_vector_free(x1);
 
-    fclose(fp);
     free(diag);
     gsl_permutation_free(p);
     gsl_matrix_free(A_COPY);
