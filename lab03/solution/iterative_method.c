@@ -3,12 +3,21 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+void print_vector(const gsl_vector *V, FILE *fp)
+{
+    for (size_t col = 0; col < V->size; ++col)
+    {
+        printf("\t%f", gsl_vector_get(V, col));
+        fprintf(fp, "\t%f", gsl_vector_get(V, col));
+    }
+}
+
 double lambda_f(double x)
 {
     // cegła ogniotrwała
     if (x <= 40.0)
     {
-        return 0.4;
+        return 0.3;
     }
     // cegła o średniej ogniotrwałości
     else if (x <= 70.0)
@@ -25,14 +34,14 @@ double lambda_f(double x)
 double vector_vector_product(gsl_vector *V1, gsl_vector *V2)
 {
     double sum = 0.0;
-    for (int col = 0; col < V1->size; col++)
+    for (size_t col = 0; col < V1->size; col++)
     {
         sum += gsl_vector_get(V1, col) * gsl_vector_get(V2, col);
     }
     return sum;
 }
 
-void matrix_vector_product(gsl_matrix *M, gsl_vector *V, gsl_vector *C)
+void matrix_vector_product(gsl_matrix *M, gsl_vector *V, gsl_vector *P)
 {
     for (size_t row = 0; row < M->size1; ++row)
     {
@@ -41,7 +50,7 @@ void matrix_vector_product(gsl_matrix *M, gsl_vector *V, gsl_vector *C)
         {
             sum += gsl_matrix_get(M, row, col) * gsl_vector_get(V, col);
         }
-        gsl_vector_set(C, row, sum);
+        gsl_vector_set(P, row, sum);
     }
 }
 
@@ -56,9 +65,9 @@ void fill_matrix_A(gsl_matrix *A)
     // zmienna pomocnicza przechowująca wartość kolejnego węzła
     double lambdaValue = 0.0;
 
-    for (int row = 0; row < dim; row++)
+    for (size_t row = 0; row < dim; row++)
     {
-        for (int col = 0; col < dim; col++)
+        for (size_t col = 0; col < dim; col++)
         {
             // diagonala
             if (row == col)
@@ -66,13 +75,13 @@ void fill_matrix_A(gsl_matrix *A)
                 lambdaValue = -lambda_f(step * row + halfStep) - lambda_f(step * (row + 1) + halfStep);
                 gsl_matrix_set(A, row, col, lambdaValue);
             }
-            // jeden nad diagonalą
+            // jeden przed diagonalą
             else if (row == col + 1)
             {
                 lambdaValue = lambda_f(step * row + halfStep);
                 gsl_matrix_set(A, row, col, lambdaValue);
             }
-            // jeden pod diagonalą
+            // jeden po diagonali
             else if (row == col - 1)
             {
                 lambdaValue = lambda_f(step * col + halfStep);
@@ -82,9 +91,9 @@ void fill_matrix_A(gsl_matrix *A)
     }
 }
 
-void fill_vector_b(gsl_vector *t)
+void fill_vector_b_x(gsl_vector *b, gsl_vector *x)
 {
-    int dim = t->size;
+    int dim = b->size;
     // wielkość kroku (razem 100 cm cegły)
     double step = 100.0 / (dim + 1);
     // połowa kroku do obliczania wartości pośrednich
@@ -97,20 +106,23 @@ void fill_vector_b(gsl_vector *t)
 
     // temperatura przy lewej granicy
     lambdaValue = -lambda_f(0.0 + halfStep);
-    gsl_vector_set(t, 0, T_L * lambdaValue);
+    gsl_vector_set(b, 0, T_L * lambdaValue);
+    gsl_vector_set(x, 0, step);
 
     // temperatury po środku do ustalenia
-    for (int col = 1; col < dim - 1; col++)
+    for (size_t col = 1; col < dim - 1; col++)
     {
-        gsl_vector_set(t, col, 0);
+        gsl_vector_set(b, col, 0);
+        gsl_vector_set(x, col, step * (col + 1));
     }
 
     // temperatura przy prawej granicy
     lambdaValue = -lambda_f(step * (dim - 1) + halfStep);
-    gsl_vector_set(t, dim - 1, T_R * lambdaValue);
+    gsl_vector_set(b, dim - 1, T_R * lambdaValue);
+    gsl_vector_set(x, dim - 1, step * dim);
 }
 
-void solve(gsl_matrix *A, gsl_vector *t, gsl_vector *b)
+void solve(gsl_matrix *A, gsl_vector *t, gsl_vector *b, FILE *fp)
 {
     int dim = t->size;
     // wektor r
@@ -126,17 +138,21 @@ void solve(gsl_matrix *A, gsl_vector *t, gsl_vector *b)
     // zmienna przechowująca wartość alfy
     double alpha = 0.0;
     // zmienna przechowująca wartość normy wektora t
-    double norm = 0.0;
+    double norm_t = 0.0;
+    // zmienna przechowująca wartość normy wektora t
+    double norm_r = 0.0;
+
+    printf("Iteracja\tNorma_r\tNorma_t\n");
+    fprintf(fp, "Iteracja\tNorma_r\tNorma_t\n");
 
     // maksymalnie 60000 iteracji
     for (int i = 0; i < 60000; i++)
-    // for (int i = 0; i < 10; i++)
     {
         // liczenie iloczynu A*t
         matrix_vector_product(A, t, A_t);
 
         // liczenie r = b - A*t
-        for (int col = 0; col < dim; col++)
+        for (size_t col = 0; col < dim; col++)
         {
             gsl_vector_set(r, col, gsl_vector_get(b, col) - gsl_vector_get(A_t, col));
         }
@@ -145,7 +161,7 @@ void solve(gsl_matrix *A, gsl_vector *t, gsl_vector *b)
         r_r_product = vector_vector_product(r, r);
         // sprawdzanie czy norma euklidesowa reszty ||r|| < 10e-6
         if (sqrt(r_r_product) < 0.000001)
-            return;
+            break;
 
         // liczenie iloczynu r*A
         matrix_vector_product(A, r, r_A);
@@ -156,13 +172,14 @@ void solve(gsl_matrix *A, gsl_vector *t, gsl_vector *b)
         alpha = r_r_product / r_A_r_product;
 
         // liczenie następnej watrości t_k+1 = t_k + alpha*r_k
-        for (int col = 0; col < dim; col++)
+        for (size_t col = 0; col < dim; col++)
         {
             gsl_vector_set(t, col, gsl_vector_get(t, col) + alpha * gsl_vector_get(r, col));
         }
-
-        norm = vector_vector_product(t, t);
-        printf("%d\t%f\t%f\n", i, r_r_product, norm);
+        norm_r = sqrt(r_r_product);
+        norm_t = sqrt(vector_vector_product(t, t));
+        printf("%d\t%f\t%f\n", i, norm_r, norm_t);
+        fprintf(fp, "%d\t%f\t%f\n", i, norm_r, norm_t);
     }
 
     // zwalnianie pamięci
@@ -171,37 +188,59 @@ void solve(gsl_matrix *A, gsl_vector *t, gsl_vector *b)
     gsl_vector_free(r_A);
 }
 
-int main()
+void heat_transport_problem(int dim, FILE *fp)
 {
-    gsl_matrix *A = gsl_matrix_calloc(9, 9);
+    printf("Rozwiązywanie problemu transportu ciepła dla macierzy %dx%d\n\n", dim, dim);
+    fprintf(fp, "Rozwiązywanie problemu transportu ciepła dla macierzy %dx%d\n\n", dim, dim);
+
+    gsl_matrix *A = gsl_matrix_calloc(dim, dim);
     fill_matrix_A(A);
-    gsl_vector *b = gsl_vector_calloc(9);
-    fill_vector_b(b);
-    gsl_vector *t = gsl_vector_calloc(9);
+    gsl_vector *b = gsl_vector_calloc(dim);
+    gsl_vector *x = gsl_vector_calloc(dim);
+    fill_vector_b_x(b, x);
+    gsl_vector *t = gsl_vector_calloc(dim);
     for (size_t col = 0; col < t->size; col++)
     {
         gsl_vector_set(t, col, 0);
     }
 
-    solve(A, t, b);
+    solve(A, t, b, fp);
 
     // wypisywanie wektora z rozkładem temperatury
-    printf("\nRozkład temperatury w piecu: \n");
-    for (size_t col = 0; col < t->size; col++)
-    {
-        printf("%.2f ", gsl_vector_get(t, col));
-    }
-    printf("\n");
+    printf("\nRozkład temperatury w piecu:\n");
+    fprintf(fp, "\nRozkład temperatury w piecu:\n");
 
-    // zapisywanie wyniku do pliku
-    FILE *fp = fopen("wyniki.txt", "w");
+    // wartość brzegowa dana w zadaniu
+    printf("%f ", 1000.0);
+    fprintf(fp, "%f ", 1000.0);
+    // obliczone rozwiązanie
+    print_vector(t, fp);
+    // wartość brzegowa dana w zadaniu
+    printf("\t%f\n", 100.0);
+    fprintf(fp, "\t%f\n", 100.0);
 
-    fclose(fp);
+    // odpowiadające odległości
+    printf("%f ", 0.0);
+    fprintf(fp, "%f ", 0.0);
+    print_vector(x, fp);
+    printf("\t%f\n", 100.0);
+    fprintf(fp, "\t%f\n", 100.0);
 
     // zwalnianie pamięci
     gsl_matrix_free(A);
     gsl_vector_free(b);
+    gsl_vector_free(x);
     gsl_vector_free(t);
+}
+
+int main()
+{
+    FILE *fp = fopen("wyniki.txt", "w");
+
+    heat_transport_problem(9, fp);
+    heat_transport_problem(99, fp);
+
+    fclose(fp);
 
     return 0;
 }
