@@ -176,10 +176,10 @@ void solve(gsl_matrix *A, gsl_vector *t, gsl_vector *b, FILE *fp)
         {
             gsl_vector_set(t, col, gsl_vector_get(t, col) + alpha * gsl_vector_get(r, col));
         }
-        norm_r = sqrt(r_r_product);
+        norm_r = log10(sqrt(r_r_product));
         norm_t = sqrt(vector_vector_product(t, t));
         printf("%d\t%f\t%f\n", i, norm_r, norm_t);
-        fprintf(fp, "%d\t%f\t%f\n", i, norm_r, norm_t);
+        fprintf(fp, "%d,%f,%f\n", i, norm_r, norm_t);
     }
 
     // zwalnianie pamięci
@@ -225,6 +225,13 @@ void heat_transport_problem(int dim, FILE *fp)
     print_vector(x, fp);
     printf("\t%f\n", 100.0);
     fprintf(fp, "\t%f\n", 100.0);
+
+    // fprintf(fp, "Rozkład wersja pionowa:\n%f,%f\n", 0.0, 1000.0);
+    // for (size_t col = 0; col < x->size; col++)
+    // {
+    //     fprintf(fp, "%f,%f\n", gsl_vector_get(x, col), gsl_vector_get(t, col));
+    // }
+    // fprintf(fp, "%f,%f\n\n", 100.0, 100.0);
 
     // zwalnianie pamięci
     gsl_matrix_free(A);
