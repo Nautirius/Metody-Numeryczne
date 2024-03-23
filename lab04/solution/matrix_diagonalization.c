@@ -164,7 +164,7 @@ void solve_task(int n, int M, FILE *fp)
     matrix_matrix_product(D, EigenValuesMatrix, D_h);
     printf("Macierz D:\n");
     fprintf(fp, "Macierz D:\n");
-    print_matrix(D, fp);
+    print_matrix(D_h, fp);
     printf("\n\n");
     fprintf(fp, "\n\n");
 
